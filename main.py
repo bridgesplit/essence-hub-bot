@@ -290,6 +290,9 @@ def scrape_lotteries():
             with Exception as e:
                 log(f"An error occured while sending webhook with new raffle, error: {e}")
 
+    t.sleep(60*15)
+    log("Checking...")
+
 if __name__ == '__main__': 
     # your code here 
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
