@@ -5,12 +5,8 @@ import json
 import sqlite3
 import art
 import datetime
-
-print(art.text2art(text="Essence Hub"))
-
-webhookURL = "https://discord.com/api/webhooks/1122900247266463865/cJ2pxNG-oOOmVyIoaE9h1uCdM23MA7UXQdSEk3Fh0PM0w1kpxQxwnND7rDa4vVmFWxtK" # Webhook link
-database = 'elixir.db'
-database2 = 'elixirv2.db'
+import socket 
+import sys 
 
 def log(content=str):
     time_now = datetime.datetime.now()
@@ -168,16 +164,23 @@ def sendWebhook(embed=DiscordEmbed, url=str):
     webhook.add_embed(embed=embed)
     webhook.execute()
 
-usedIDs = retrieveFrom(file=database2)
-existingRafflesNames = retrieveFrom(file=database)
 
-while True:
 
+def scrape_lotteries():
+    webhookURL = "https://discord.com/api/webhooks/1122900247266463865/cJ2pxNG-oOOmVyIoaE9h1uCdM23MA7UXQdSEk3Fh0PM0w1kpxQxwnND7rDa4vVmFWxtK" # Webhook link
+    database = 'elixir.db'
+    database2 = 'elixirv2.db'
+
+    usedIDs = retrieveFrom(file=database2)
+    existingRafflesNames = retrieveFrom(file=database)
+    # print(existingRafflesNames)
     liveLotteries = getLiveLotteries() # Scraping live lotteries
+    # print(liveLotteries)
     amountOfLotteries = int(liveLotteries['total']) # From live lotteries scraping amount of them
 
     # Checking for raffles that end in less than 3h
     for raffleNumber in reversed(range(amountOfLotteries)): # Iteration through all lotteries in reversed order (from the oldest)
+        print(raffleNumber)
         try:
             existingRafflesNames = retrieveFrom(file=database)
             usedIDs = retrieveFrom(file=database2)
@@ -287,5 +290,15 @@ while True:
             with Exception as e:
                 log(f"An error occured while sending webhook with new raffle, error: {e}")
 
-    t.sleep(60*15) # How often bot checks raffles ending soon / new raffles (60secs*15minutes as function requires value in seconds)
-    log("Checking...")
+if __name__ == '__main__': 
+    # your code here 
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
+    server_address = ('', 8080) 
+    server_socket.bind(server_address) 
+
+    server_socket.listen()
+
+    while True:
+        client_socket, addr = server_socket.accept() 
+        scrape_lotteries()
+        client_socket.close() 
