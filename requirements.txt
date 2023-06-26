@@ -1,0 +1,7 @@
+discord_webhook
+requests
+time
+json
+sqlite3
+art
+datetime
