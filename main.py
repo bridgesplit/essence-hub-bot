@@ -6,13 +6,17 @@ import sqlite3
 import art
 import datetime
 import socket 
+import os
+from dotenv import load_dotenv
 
-print(art.text2art(text="Essence Hub"))
+# Load variables from .env file
+load_dotenv()
 
-webhookURL = "https://discord.com/api/webhooks/1122900247266463865/cJ2pxNG-oOOmVyIoaE9h1uCdM23MA7UXQdSEk3Fh0PM0w1kpxQxwnND7rDa4vVmFWxtK" # Webhook link
+# Get the value of the environment variable
+webhookURL = os.environ.get('WEBHOOK_URL')
 database = 'elixir.db'
 database2 = 'elixirv2.db'
-
+print(webhookURL)
 def log(content=str):
     time_now = datetime.datetime.now()
     current_time = time_now.strftime("%H:%M:%S")
