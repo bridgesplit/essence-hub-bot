@@ -4,7 +4,6 @@ import time as t
 import json
 import sqlite3
 import datetime
-import socket 
 import os
 from dotenv import load_dotenv
 
@@ -175,7 +174,7 @@ def sendWebhook(embed=DiscordEmbed, url=str):
 usedIDs = retrieveFrom(file=database2)
 existingRafflesNames = retrieveFrom(file=database)
 
-def check_lotteries():
+def run_auction_check():
     log("Running lottery check")
     liveLotteries = getLiveLotteries() # Scraping live lotteries
     amountOfLotteries = int(liveLotteries['total']) # From live lotteries scraping amount of them
@@ -301,16 +300,7 @@ def check_lotteries():
                 with Exception as e:
                     log(f"An error occured while sending webhook with new raffle, error: {e}")
                     continue
+    
+    return "Successfully ran lotteries check"
 
-if __name__ == '__main__': 
-    # your code here 
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
-    server_address = ('', 8080) 
-    server_socket.bind(server_address) 
-
-    server_socket.listen()
-
-    client_socket, addr = server_socket.accept() 
-    check_lotteries()
-    client_socket.close()
 

@@ -1,3 +1,4 @@
 discord_webhook
 requests
 python-dotenv
+flask
