@@ -3,7 +3,6 @@ import requests
 import time as t
 import json
 import sqlite3
-import art
 import datetime
 import socket 
 import os
