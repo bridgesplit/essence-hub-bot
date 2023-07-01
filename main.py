@@ -6,7 +6,12 @@ import sqlite3
 import art
 import datetime
 import socket 
-import sys 
+
+print(art.text2art(text="Essence Hub"))
+
+webhookURL = "https://discord.com/api/webhooks/1122900247266463865/cJ2pxNG-oOOmVyIoaE9h1uCdM23MA7UXQdSEk3Fh0PM0w1kpxQxwnND7rDa4vVmFWxtK" # Webhook link
+database = 'elixir.db'
+database2 = 'elixirv2.db'
 
 def log(content=str):
     time_now = datetime.datetime.now()
@@ -164,33 +169,33 @@ def sendWebhook(embed=DiscordEmbed, url=str):
     webhook.add_embed(embed=embed)
     webhook.execute()
 
+usedIDs = retrieveFrom(file=database2)
+existingRafflesNames = retrieveFrom(file=database)
 
-
-def scrape_lotteries():
-    webhookURL = "https://discord.com/api/webhooks/1122900247266463865/cJ2pxNG-oOOmVyIoaE9h1uCdM23MA7UXQdSEk3Fh0PM0w1kpxQxwnND7rDa4vVmFWxtK" # Webhook link
-    database = 'elixir.db'
-    database2 = 'elixirv2.db'
-
-    usedIDs = retrieveFrom(file=database2)
-    existingRafflesNames = retrieveFrom(file=database)
-    # print(existingRafflesNames)
+def check_lotteries():
+    log("Running lottery check")
     liveLotteries = getLiveLotteries() # Scraping live lotteries
-    # print(liveLotteries)
     amountOfLotteries = int(liveLotteries['total']) # From live lotteries scraping amount of them
+    lastStartTime = 0
+    IDtoCheck = -1
 
     # Checking for raffles that end in less than 3h
     for raffleNumber in reversed(range(amountOfLotteries)): # Iteration through all lotteries in reversed order (from the oldest)
-        print(raffleNumber)
+
+        info = liveLotteries['lotteries'][raffleNumber]
+        if int(info['startTime']) > lastStartTime:
+            lastStartTime = int(info['startTime'])
+            indexToCheck = raffleNumber
+
         try:
             existingRafflesNames = retrieveFrom(file=database)
             usedIDs = retrieveFrom(file=database2)
         except:
             with Exception as e:
                 print(f"An error occured while retrieving info from database, error: {e}")
+                continue
 
         try:
-
-            info = liveLotteries['lotteries'][raffleNumber]
 
             ID = int(info['id']) # Getting ID of certain raffle
             endTime = int(info['endTime']) # Getting time at which certain raffle ends
@@ -212,7 +217,8 @@ def scrape_lotteries():
 
         except:
             with Exception as e:
-                print(f"An error occured while creating variables needed for embed, error: {e}")\
+                log(f"An error occured while creating variables needed for embed, error: {e}")
+                continue
 
         try:
             # Setting up embed
@@ -231,8 +237,9 @@ def scrape_lotteries():
         except:
             with Exception as e:
                 log(f"An error occured while setting embed up, error: {e}")
+                continue
 
-        if timeUntilEnd < 1090000 and timeUntilEnd > 0 and checkIDinList(usedIDs, ID) == False: # Checks if raffle ends in less than 3hours and if it was already reminded
+        if timeUntilEnd < 10900 and timeUntilEnd > 0 and checkIDinList(usedIDs, ID) == False: # Checks if raffle ends in less than 3hours and if it was already reminded
             try:
                 # Sending webhook
                 sendWebhook(url=webhookURL, embed=embed)
@@ -240,6 +247,7 @@ def scrape_lotteries():
             except:
                 with Exception as e:
                     log(f"An error occured while sending webhook, error: {e}")
+                    continue
 
             try:
                 # Typing in ID into database so webhook with same auction won't be sent again
@@ -248,50 +256,48 @@ def scrape_lotteries():
                 with Exception as e:
                     log(f"An error occured while typing data into database, error: {e}")
 
-    if str(liveLotteries['lotteries'][0]['name']) not in existingRafflesNames:
-        try:
-            info = liveLotteries['lotteries'][0]
+        if liveLotteries['lotteries'][indexToCheck]['id'] not in usedIDs:
+            try:
+                info = liveLotteries['lotteries'][indexToCheck]
 
-            name = str(info['name'])
-            raffleDescription = str(info['description'])
-            winnersAmount = str(info['numWinners'])
-            endTime = int(info['endTime'])
-            raffleIdentifier = str(info['identifier'])
-            raffleImage = str(info['image'])
+                name = str(info['name'])
+                raffleDescription = str(info['description'])
+                winnersAmount = str(info['numWinners'])
+                endTime = int(info['endTime'])
+                raffleIdentifier = str(info['identifier'])
+                raffleImage = str(info['image'])
 
-            # Creating embed
-            embed = createEmbed(
-                name=name, 
-                description=raffleDescription, 
-                winnersAmount=winnersAmount, 
-                endTime=endTime, 
-                identifier=raffleIdentifier, 
-                image=raffleImage,
-                option=2
+                # Creating embed
+                embed = createEmbed(
+                    name=name, 
+                    description=raffleDescription, 
+                    winnersAmount=winnersAmount, 
+                    endTime=endTime, 
+                    identifier=raffleIdentifier, 
+                    image=raffleImage,
+                    option=2
+                    )
+                
+            except:
+                with Exception as e:
+                    log(f"Error while creating embed, error {e}")
+                    continue
+        
+            try:
+                # Sending webhook
+                sendWebhook(
+                    url=webhookURL,
+                    embed=embed
                 )
-            
-            # Sending webhook
-            sendWebhook(
-                url=webhookURL,
-                embed=embed
-            )
+                
+                typeIn(file=database2, name=name, ID=ID)
+                
+                log('New auction webhook sent successfully!')
 
-            # Store ID in database
-            ID = int(info['id']) 
-            typeIn(
-                file=database, 
-                name=name, 
-                ID=int(liveLotteries['lotteries'][0]['id'])
-                )
-            
-            log('New auction webhook sent successfully!')
-
-        except:
-            with Exception as e:
-                log(f"An error occured while sending webhook with new raffle, error: {e}")
-
-    t.sleep(60*15)
-    log("Checking...")
+            except:
+                with Exception as e:
+                    log(f"An error occured while sending webhook with new raffle, error: {e}")
+                    continue
 
 if __name__ == '__main__': 
     # your code here 
@@ -301,7 +307,7 @@ if __name__ == '__main__':
 
     server_socket.listen()
 
-    while True:
-        client_socket, addr = server_socket.accept() 
-        scrape_lotteries()
-        client_socket.close() 
+    client_socket, addr = server_socket.accept() 
+    check_lotteries()
+    client_socket.close()
+
